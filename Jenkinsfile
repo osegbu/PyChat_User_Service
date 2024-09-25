@@ -40,8 +40,8 @@ pipeline {
         stage('Cleanup') {
             steps {
                 script {
-                    sh 'docker stop chat_service'
-                    sh 'docker rm chat_service'
+                    sh 'docker stop user_service'
+                    sh 'docker rm user_service'
                 }
             }
         }
