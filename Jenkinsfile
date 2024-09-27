@@ -1,54 +1,59 @@
 pipeline {
-    agent {
-        label 'docker-agent-alpine'
-    }
+    agent any
+
     environment {
-        DOCKER_IMAGE = "osegbu/PyChat_User_Service:latest"
+        IMAGE_NAME = 'osegbu/pychat-user-service'
+        SSH_USER = 'ec2-user'
+        SSH_HOST = 'ec2-100-26-193-126.compute-1.amazonaws.com'
+        DEPLOYMENT_FILE_PATH = '~/user-service-deployment.yaml'
     }
+
     stages {
-        stage('Clone repository') {
+        stage('Clone Repository') {
             steps {
                 git branch: 'main', url: 'https://github.com/osegbu/PyChat_User_Service'
             }
         }
+
         stage('Build Docker Image') {
             steps {
                 script {
-                    def app = docker.build("${DOCKER_IMAGE}", ".")
+                    sh 'docker build -t $IMAGE_NAME:$BUILD_NUMBER .'
                 }
             }
         }
-        stage('Run Application and Health Check') {
+
+        stage('Push Docker Image') {
             steps {
                 script {
-                    def app = docker.image(DOCKER_IMAGE)
-                    app.run("-d -p 8000:8000 --name user_service")
-
-                    def response = sh(
-                        script: "curl --write-out %{http_code} --silent --output /dev/null http://localhost:8000/docs", 
-                        returnStdout: true
-                    ).trim()
-
-                    if (response == "200") {
-                        echo "Application started successfully."
-                    } else {
-                        error "Health check failed. Application not running correctly."
+                    docker.withRegistry('https://index.docker.io/v1/', 'docker') {
+                        sh 'docker push ${IMAGE_NAME}:${BUILD_NUMBER}'
                     }
                 }
             }
         }
-        stage('Cleanup') {
+
+        stage('Deploy to k3s via SSH') {
             steps {
                 script {
-                    sh 'docker stop user_service'
-                    sh 'docker rm user_service'
+                    withCredentials([sshUserPrivateKey(credentialsId: 'my-ec2-ssh-key', 
+                                                      keyFileVariable: 'SSH_KEY_PATH')]) {
+			sh """
+                        ssh -o StrictHostKeyChecking=no -i \$SSH_KEY_PATH \$SSH_USER@\${SSH_HOST} "
+                            sudo sed -i 's|image: .*|image: $IMAGE_NAME:$BUILD_NUMBER|' $DEPLOYMENT_FILE_PATH; 
+                            sudo kubectl apply -f $DEPLOYMENT_FILE_PATH
+                        "
+                        """
+                    }
                 }
             }
         }
     }
+
     post {
         always {
-            sh 'docker rmi ${DOCKER_IMAGE} || true'
+            sh 'docker rmi $IMAGE_NAME:$BUILD_NUMBER || true'
         }
     }
 }
+
