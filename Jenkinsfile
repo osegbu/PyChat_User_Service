@@ -18,7 +18,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh 'docker build -t $IMAGE_NAME:$BUILD_NUMBER .'
+                    sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
                 }
             }
         }
@@ -27,7 +27,7 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://index.docker.io/v1/', 'docker') {
-                        sh 'docker push ${IMAGE_NAME}:${BUILD_NUMBER}'
+                        sh "docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
                     }
                 }
             }
@@ -36,12 +36,11 @@ pipeline {
         stage('Deploy to k3s via SSH') {
             steps {
                 script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'my-ec2-ssh-key', 
-                                                      keyFileVariable: 'SSH_KEY_PATH')]) {
-			sh """
+                    withCredentials([sshUserPrivateKey(credentialsId: 'my-ec2-ssh-key', keyFileVariable: 'SSH_KEY_PATH')]) {
+                        sh """
                         ssh -o StrictHostKeyChecking=no -i \$SSH_KEY_PATH \$SSH_USER@\${SSH_HOST} "
-                            sudo sed -i 's|image: .*|image: $IMAGE_NAME:$BUILD_NUMBER|' $DEPLOYMENT_FILE_PATH; 
-                            sudo kubectl apply -f $DEPLOYMENT_FILE_PATH
+                            sudo sed -i 's|image: .*|image: ${IMAGE_NAME}:${BUILD_NUMBER}|' ${DEPLOYMENT_FILE_PATH};
+                            sudo kubectl apply -f ${DEPLOYMENT_FILE_PATH}
                         "
                         """
                     }
@@ -52,7 +51,8 @@ pipeline {
 
     post {
         always {
-            sh 'docker rmi $IMAGE_NAME:$BUILD_NUMBER || true'
+            sh "docker rmi ${IMAGE_NAME}:${BUILD_NUMBER} || true"
+            deleteDir()
         }
     }
 }
