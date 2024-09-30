@@ -90,6 +90,7 @@ async def signup_endpoint(create_user: CreatUser, api_key: str = Depends(check_a
     except asyncpg.UniqueViolationError:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Username is already taken')
     except Exception as e:
+        print(str(e))
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 @app.post("/update_username")
