@@ -18,10 +18,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-if not os.path.exists("./static"):
-    os.makedirs("./static")
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await db_conn()
@@ -32,9 +28,7 @@ app = FastAPI(lifespan=lifespan)
 app.mount('/static', StaticFiles(directory='./static'), name='static')
 
 origins = [
-    'http://localhost',
-    'http://localhost:8000',
-    'http://localhost:3000'
+    'http://100.26.193.126:30067'
 ]
 
 app.add_middleware(
