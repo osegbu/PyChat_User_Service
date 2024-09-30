@@ -3,5 +3,4 @@ db/__pycache__/
 models/__pycache__/
 utils/__pycache__/
 venv/
-static/
 .env
