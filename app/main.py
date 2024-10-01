@@ -28,7 +28,7 @@ app = FastAPI(lifespan=lifespan)
 app.mount('/static', StaticFiles(directory='./static'), name='static')
 
 origins = [
-    'http://100.26.193.126:30067'
+    os.getenv("HOST_URL")
 ]
 
 app.add_middleware(
