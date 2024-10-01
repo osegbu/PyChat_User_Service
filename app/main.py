@@ -39,7 +39,7 @@ app.add_middleware(
     allow_headers=['*']
 )
 
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = os.getenv("AUTH_SECRET")
 ALGORITHM = os.getenv("ALGORITHM")
 
 security = HTTPBearer()
