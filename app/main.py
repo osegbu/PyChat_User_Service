@@ -127,7 +127,6 @@ async def upload_image(previousImage: str = Body(...), file: UploadFile = File(.
             image_upload = ImageUpload(filename=file.filename, content_type=file.content_type, size=file_size)
             unique_file_name = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}{os.path.splitext(file.filename)[1]}"
             file_path = os.path.join("static", unique_file_name)
-
             async with aiofiles.open(file_path, "wb") as f:
                 content = await file.read()
                 await f.write(content)
