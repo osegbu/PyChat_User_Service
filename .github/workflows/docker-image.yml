@@ -24,12 +24,12 @@ jobs:
       # Step 3: Build the Docker image with the "latest" tag
       - name: Build Docker image
         run: |
-          docker build -t osegbu/pychat-user-service:latest .
+          docker build -t osegbu/pychat-user-service:${{ github.sha }} .
 
       # Step 4: Push the Docker image to Docker Hub
       - name: Push Docker image to Docker Hub
         run: |
-          docker push osegbu/pychat-user-service:latest
+          docker push osegbu/pychat-user-service:${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -42,7 +42,7 @@ jobs:
           echo "${{ secrets.EC2_SSH_KEY }}" > my-key.pem
           chmod 600 my-key.pem
           ssh -o StrictHostKeyChecking=no -i my-key.pem ec2-user@ec2-100-26-193-126.compute-1.amazonaws.com "
-            sudo sed -i 's|image: .*|image: osegbu/pychat-user-service:latest|' ~/user-service-deployment.yaml;
+            sudo sed -i 's|image: .*|image: osegbu/pychat-user-service:${{ github.sha }}|' ~/user-service-deployment.yaml;
             sudo kubectl apply -f ~/user-service-deployment.yaml
           "
           rm my-key.pem
