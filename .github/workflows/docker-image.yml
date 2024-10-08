@@ -41,8 +41,8 @@ jobs:
         run: |
           echo "${{ secrets.EC2_SSH_KEY }}" > my-key.pem
           chmod 600 my-key.pem
-          ssh -o StrictHostKeyChecking=no -i my-key.pem ec2-user@ec2-100-26-193-126.compute-1.amazonaws.com "
-            sudo sed -i 's|image: .*|image: osegbu/pychat-user-service:${{ github.sha }}|' ~/user-service-deployment.yaml;
-            sudo kubectl apply -f ~/user-service-deployment.yaml
+          ssh -o StrictHostKeyChecking=no -i my-key.pem ec2-user@ec2-54-175-214-30.compute-1.amazonaws.com "
+            sudo sed -i 's|image: .*|image: osegbu/pychat-user-service:${{ github.sha }}|' ~/user.yaml;
+            sudo kubectl apply -f ~/user.yaml
           "
           rm my-key.pem
