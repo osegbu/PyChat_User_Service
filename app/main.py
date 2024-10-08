@@ -62,7 +62,7 @@ def check_passwords_match(password, confirm_password):
 async def login_endpoint(login_request: LoginRequest, api_key: str = Depends(check_api_key)):
     try:
         query = "SELECT * FROM users WHERE username=$1"
-        user = await execute_query(insert_query, query, login_request.username)
+        user = await execute_query(insert_query, query, login_request.username.lower())
         if user and verify_password(login_request.password, user['password']):
             return user
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid credentials')
@@ -72,7 +72,7 @@ async def login_endpoint(login_request: LoginRequest, api_key: str = Depends(che
 @app.post("/signup", description="Create a new user with a username and password.")
 async def signup_endpoint(create_user: CreatUser, api_key: str = Depends(check_api_key)):
     try:
-        username = create_user.username
+        username = create_user.username.lower()
         first_letter = username[0].upper()
         password = await hash_password(check_passwords_match(create_user.password, create_user.confirm_password))
         image_name = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
