@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 import bcrypt
 from app.db.init_db import db_conn, db_close
 from app.db.query import execute_query, insert_query, select_query
-from app.models.validations import UpdateUsername, ImageUpload, LoginRequest, CreatUser, UpdateAbout
+from app.models.validations import ImageUpload, LoginRequest, CreatUser
 import asyncpg
 from app.utils.user_avatar import create_profile_image
 from jose import jwt
@@ -78,39 +78,13 @@ async def signup_endpoint(create_user: CreatUser, api_key: str = Depends(check_a
         image_name = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         create_profile_image(first_letter, output_path = os.path.join("static", image_name))
 
-        query = "INSERT INTO users(username, password,  profileImage) VALUES ($1, $2, $3, $4) RETURNING id, username, about, profileImage"
+        query = "INSERT INTO users(username, password,  profileImage) VALUES ($1, $2, $3, $4) RETURNING id, username, profileImage"
         user = await execute_query(insert_query, query, username, password, image_name)
         return user
     except asyncpg.UniqueViolationError:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Username is already taken')
     except Exception as e:
         print(str(e))
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-
-@app.post("/update_username")
-async def update_username(updateusername: UpdateUsername, api_key: str = Depends(check_api_key), credentials: HTTPAuthorizationCredentials = Depends(security)):
-    token = credentials.credentials
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        if payload['id'] == str(updateusername.id):
-            query = "UPDATE users SET username = $1 WHERE id = $2 RETURNING id, username, about, profileImage"
-            return await execute_query(insert_query, query, updateusername.username, updateusername.id)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized')
-    except asyncpg.UniqueViolationError:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Username is taken')
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-
-@app.post("/update_about")
-async def update_about(updateabout: UpdateAbout, api_key: str = Depends(check_api_key), credentials: HTTPAuthorizationCredentials = Depends(security)):
-    token = credentials.credentials
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        if payload['id'] == str(updateabout.id):
-            query = "UPDATE users SET about = $1 WHERE id = $2 RETURNING id, username, about, profileImage"
-            return await execute_query(insert_query, query, updateabout.about, updateabout.id)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized')
-    except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 @app.post("/upload_profile_image/{id}", description="Upload profile image. Only JPEG and PNG formats are supported, with a max size of 5 MB.")
@@ -131,7 +105,7 @@ async def upload_image(previousImage: str = Body(...), file: UploadFile = File(.
                 content = await file.read()
                 await f.write(content)
 
-            query = "UPDATE users SET profileImage = $1 WHERE id = $2 RETURNING id, username, about, profileImage"
+            query = "UPDATE users SET profileImage = $1 WHERE id = $2 RETURNING id, username, profileImage"
             return await execute_query(insert_query, query, unique_file_name, id)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized')
     except Exception as e:
@@ -140,7 +114,7 @@ async def upload_image(previousImage: str = Body(...), file: UploadFile = File(.
 @app.post("/get_all_users")
 async def get_users(api_key: str = Depends(check_api_key)):
     try:
-        query = "SELECT id, username, about, profileImage, status FROM users ORDER BY id DESC"
+        query = "SELECT id, username, profileImage, status FROM users ORDER BY id DESC"
         return await execute_query(select_query, query) or HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail='No users found')
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
