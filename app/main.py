@@ -78,8 +78,8 @@ async def signup_endpoint(create_user: CreatUser, api_key: str = Depends(check_a
         image_name = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         create_profile_image(first_letter, output_path = os.path.join("static", image_name))
 
-        query = "INSERT INTO users(username, password, about, profileImage) VALUES ($1, $2, $3, $4) RETURNING id, username, about, profileImage"
-        user = await execute_query(insert_query, query, username, password, 'Just joined and excited!', image_name)
+        query = "INSERT INTO users(username, password,  profileImage) VALUES ($1, $2, $3, $4) RETURNING id, username, about, profileImage"
+        user = await execute_query(insert_query, query, username, password, image_name)
         return user
     except asyncpg.UniqueViolationError:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Username is already taken')
